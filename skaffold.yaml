@@ -39,12 +39,3 @@ profiles:
     path: /deploy/helm/releases/0/setValues
     value: 
       storageClassName: microk8s-hostpath
-profiles:
-- name: microk8s
-  activation:
-  - kubeContext: microk8s
-  patches:
-  - op: add
-    path: /deploy/helm/releases/0/setValues
-    value: 
-      storageClassName: microk8s-hostpath
