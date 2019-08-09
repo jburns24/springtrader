@@ -35,30 +35,11 @@ def p
  
 def loadProps() {
   def props = new Properties()
-  new File("nanotrader.properties").withInputStream { 
+  new File("nanotrader.sqlf.properties").withInputStream { 
     stream -> props.load(stream) 
   }
   p = new ConfigSlurper().parse(props)
   apiURL = "http://" + p.appServerHost + ":" + p.appServerPort
-}
-
-def createQuotes() {
-  def sql = Sql.newInstance("jdbc:postgresql://" + p.dbHost + ":" +
-       "5432/nanotrader", p.dbUser , p.dbPasswd, 
-       "org.postgresql.Driver")
-  query = "select count(*) from quote"
-  quoteCount = sql.firstRow(query)
-  if (quoteCount.count == 0) {
-    // populate quote table 
-    query = "insert into quote (quoteid, low, open1, volume, price, high, companyname, symbol, change1) " + 
-            "values (nextval('quote_sequence'),?,?,?,?,?,?,?,?)"
-    char seperator = ':'
-    CSVReader reader = new CSVReader(new FileReader("quote.csv"), seperator)
-    quoteData = reader.readAll()
-    quoteData.eachWithIndex() { o, i ->
-        sql.executeInsert query, o[0].toDouble(), o[1].toDouble(), o[2].toInteger(), o[3].toDouble(), o[4].toDouble(), o[5], o[6], o[7].toInteger()
-    }
-  }
 }
 
 def registerUsers() {
@@ -141,8 +122,26 @@ def sellOrders() {
   } 
 }
 
+def checkForData() {
+  def url = p.dbURLPrefix + p.dbHost + ":" + p.dbPort
+  def sqlf = Sql.newInstance(url, p.dbUser, p.dbPasswd, p.dbDriver)
+  def dataExists = true
+  sqlf.query('SELECT * FROM ACCOUNT') { resultSet ->
+    if(resultSet.next()){
+      println 'DATA FOUND'
+    } else {
+    println 'DATA MISSING'
+    dataExists = false
+    }
+  }
+  sqlf.close()
+  return dataExists
+}
+
 loadProps()
-// createQuotes()
+if(checkForData()){
+  return
+}
 registerUsers()
 getTokens()
 buyOrders()

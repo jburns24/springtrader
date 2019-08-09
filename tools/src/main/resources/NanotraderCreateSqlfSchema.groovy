@@ -18,6 +18,19 @@ def createSchema() {
   project.init()
   project.setName("Nanotrader DB Creation")
   
+  //Check if nanotrader table exists
+  def url = p.dbURLPrefix + p.dbHost + ":" + p.dbPort
+  def sqlf = Sql.newInstance(url, p.dbUser, p.dbPasswd, p.dbDriver)
+  def md = sqlf.connection.metaData
+  rs = md.getTables(null, 'NANOTRADER', 'ACCOUNT' , null);
+    println 'EXISTS! EXITING'
+   if(rs.next()){
+    sqlf.close()
+    return
+  }
+  println 'DOES NOT EXIST: CREATING'
+  sqlf.close()
+  
   // Create Tables and sequences
   SQLExec sqlExec = new SQLExec();
   SQLExec.OnError onError = new SQLExec.OnError();
